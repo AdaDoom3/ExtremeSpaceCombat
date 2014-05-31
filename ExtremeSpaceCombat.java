@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.awt.geom.AffineTransform;
+
 import javax.swing.*;
 import javax.sound.sampled.*;
 import javax.imageio.ImageIO;
@@ -129,16 +130,16 @@ public class ExtremeSpaceCombat{
       if(ROWS <= 0 || COLUMNS <= 0) throw new IllegalArgumentException();
       locations = new Object[COLUMNS][ROWS];
     }
-    public int getCount(Object object){
+    public int getCount(Class object){
       int result = 0;
       for(Object objectb : getAll())
-        if(objectb.getClass() == object.getClass()) result++;
+        if(objectb.getClass() == object) result++;
       return result;
     }
-    public ArrayList<T> getKind(Object object){
+	public ArrayList<T> getKind(Class object){
       ArrayList<T> result = new ArrayList<T>();
       for(Object objectb : getAll())
-        if(objectb.getClass() == object.getClass()) result.add((T)objectb);
+        if(objectb.getClass() == object) result.add((T)objectb);
       return result;
     }
     public Object getInstance(Object object){
@@ -445,7 +446,7 @@ public class ExtremeSpaceCombat{
     private boolean attack(){
       Location current;
       int range;
-      for(Sprite sprite : getGrid().getKind(new Player()))
+      for(Sprite sprite : getGrid().getKind(Player.class))
         for(int i = (sprite.getDirection() + RIGHT) % FULL_CIRCLE;;i = (i + RIGHT) % FULL_CIRCLE){
           current = sprite.getLocation();
           range = 0;
@@ -480,7 +481,7 @@ public class ExtremeSpaceCombat{
         Location next = null;
         Location current;
         int range;
-        for(Sprite sprite : getGrid().getKind(new Player()))
+        for(Sprite sprite : getGrid().getKind(Player.class))
           for(int i = (sprite.getDirection() + RIGHT) % FULL_CIRCLE;
           i!= sprite.getDirection();i = (i + RIGHT) % FULL_CIRCLE){
             current = sprite.getLocation();
@@ -550,14 +551,12 @@ public class ExtremeSpaceCombat{
   public static void main(String[] args){
     Grid<Sprite> level = new Grid<Sprite>();
     BufferedImage background = null;
-    int stupid = 0;
-    boolean isFirstTime = true;
     JLabel label = new JLabel();
     try{background = ImageIO.read(new File(BACKGROUND + EXTENSION_IMAGE));}catch(Exception error){}
     BufferedImage buffer = new BufferedImage(COLUMNS * IMAGE_SIZE, ROWS * IMAGE_SIZE, background.getType());
     Graphics2D graphics = buffer.createGraphics();
     JFrame frame = new JFrame(TITLE);
-    frame.show();
+    frame.setVisible(true);
     Insets insets = frame.getInsets();
     String result = "";
     Long start = System.currentTimeMillis();
@@ -574,22 +573,24 @@ public class ExtremeSpaceCombat{
     Clip song = getSound(SOUND_SONG);
     int startCount = getConstant("bot.count");
     song.start();
+    label = new JLabel(new ImageIcon(buffer));
+    frame.add(label);
     while(true)if(current + SPEED < System.currentTimeMillis()){
       if((System.currentTimeMillis() - start) / 1000 > TIME_LIMIT){
-        if(level.getCount(new Bot()) > 0) result = TEXT_COOP_LOSE;
+        if(level.getCount(Bot.class) > 0) result = TEXT_COOP_LOSE;
         else result = TEXT_VS_TIE;
         break;
       }
-      if(startCount > 0 && level.getCount(new Bot()) <= 0){
+      if(startCount > 0 && level.getCount(Bot.class) <= 0){
         result = TEXT_COOP_WIN + (System.currentTimeMillis() - start) / 1000 + " seconds";
         break;
       }
-      if(startCount <= 0 && level.getCount(new Player()) < 2){
+      if(startCount <= 0 && level.getCount(Player.class) < 2){
         Player winner = (Player)level.getInstance(new Player());
         result = TEXT_VS_WIN + winner.getID();
         break;
       }
-      if(startCount > 0 && level.getCount(new Player()) <= 0){
+      if(startCount > 0 && level.getCount(Player.class) <= 0){
         result = TEXT_COOP_DIE;
         break;
       }
@@ -604,11 +605,7 @@ public class ExtremeSpaceCombat{
         graphics.drawImage(sprite.getImage(), transform, null);
         if(sprite.color != null) graphics.setPaintMode();
       }
-      if(isFirstTime){
-        label = new JLabel(new ImageIcon(buffer));
-        frame.add(label);
-        isFirstTime = false;
-      }else label.repaint(0, 0, 0, frame.getWidth(), frame.getHeight());
+      label.repaint(0, 0, 0, frame.getWidth(), frame.getHeight());
       frame.setVisible(true);
       graphics.drawImage(background, 0, 0, null);
     }
